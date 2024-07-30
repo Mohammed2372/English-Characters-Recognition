@@ -1,17 +1,19 @@
-import numpy as np
 import os
+import sys
 import random
 import joblib
+import numpy as np
+import tkinter as tk
 import tensorflow as tf
+from PIL import Image, ImageTk
+from tkinter import filedialog, Label, Button
 from tensorflow.keras.preprocessing.image import load_img, img_to_array # type: ignore
-import sys
 
 # Ensure UTF-8 encoding
 sys.stdout.reconfigure(encoding='utf-8')
 
 # Parameters
 img_size = (32, 32)
-n = 20
 
 # Load the trained model
 model = tf.keras.models.load_model('english_character_recognition_model.keras')
@@ -38,10 +40,41 @@ def select_random_images(folder_path, n):
     all_images = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.endswith(('.png', '.jpg', '.jpeg'))]
     return random.sample(all_images, n)
 
-# Example usage
-folder_path = 'Img'  # Replace with your image folder path
-random_images = select_random_images(folder_path, n)
+# Tkinter GUI
+def on_button_click():
+    file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.png;*.jpg;*.jpeg")])
+    if file_path:
+        predicted_label = predict_image(file_path)
+        result_label.config(text=f'Label is: {predicted_label}')
+        
+        # Display the selected image
+        img = Image.open(file_path)
+        img.thumbnail((200, 200))  # Resize the image to fit in the window
+        img = ImageTk.PhotoImage(img)
+        img_label.config(image=img)
+        img_label.image = img  # Keep a reference to avoid garbage collection
 
-for image_path in random_images:
-    predicted_label = predict_image(image_path)
-    print(f'Image: {image_path} - Predicted Label: {predicted_label}')
+# Create the main window
+root = tk.Tk()
+root.title('Image Classification')
+root.geometry('300x300')
+# root.resizable(False, False)  # Make the window non-resizable
+
+# Add a label above the button
+instruction_label = Label(root, text="Choose an image")
+instruction_label.pack(pady=10)
+
+# Add a button to choose the image
+choose_button = Button(root, text="Choose Image", command=on_button_click)
+choose_button.pack(pady=10)
+
+# Add a label to show the preview of the selected image
+img_label = Label(root)
+img_label.pack(pady=10)
+
+# Add a label to show the prediction result
+result_label = Label(root, text="")
+result_label.pack(pady=10)
+
+# Run the Tkinter event loop
+root.mainloop()
